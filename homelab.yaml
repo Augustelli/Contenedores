@@ -1,0 +1,84 @@
+version: '3.7'
+
+services:
+  # Servicios base
+  nginx:
+    # ... configuración de Nginx
+    networks:
+      - frontend
+    # ... instrumentación con OpenTelemetry
+  nextcloud:
+    # ... configuración de Nextcloud
+    networks:
+      - backend
+    # ... instrumentación con OpenTelemetry
+
+  # Portainer
+  portainer:
+    image: portainer/portainer-ce
+    command: -H tcp://0.0.0.0:9000 -H unix:///var/run/docker.sock
+    ports:
+      - 9000:9000
+    volumes:
+      - portainer_data:/data
+    networks:
+      - management
+
+  # Pi-hole
+  pihole:
+    # ... configuración de Pi-hole
+    networks:
+      - frontend
+    # ... instrumentación con OpenTelemetry
+
+  # Stack de Grafana
+  prometheus:
+    # ... configuración de Prometheus
+    networks:
+      - monitoring
+  grafana:
+    # ... configuración de Grafana
+    networks:
+      - monitoring
+    volumes:
+      - grafana_data:/var/lib/grafana
+  loki:
+    # ... configuración de Loki
+    networks:
+      - monitoring
+    volumes:
+      - loki_data:/var/lib/loki
+  tempo:
+    # ... configuración de Tempo
+    networks:
+      - monitoring
+
+  opentelemetry-collector:
+    image: otel/collector
+    command: --config=/etc/otel-collector-config.yaml
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    networks:
+      - monitoring
+
+  uptime-kuma:
+    image: louislam/uptime-kuma
+    ports:
+      - "3001:3001"
+    volumes:
+      - uptime-kuma:/app/data
+    networks:
+      - monitoring
+
+networks:
+  frontend:
+  backend:
+  management:
+  monitoring:
+
+volumes:
+  portainer_data:
+  grafana_data:
+  loki_data:
+  otel-collector-config:
+  uptime-kuma:
